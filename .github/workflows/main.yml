@@ -226,19 +226,43 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 6. Strip any DEVELOPMENT_TEAM from all .xcconfig files
+      # 6. Strip any DEVELOPMENT_TEAM from all .xcconfig files (Python, bulletproof)
       # ------------------------------------------------------------------
       - name: Strip DEVELOPMENT_TEAM from xcconfig files
         run: |
           echo "Removing DEVELOPMENT_TEAM lines from all xcconfig files..."
-          find ios -name "*.xcconfig" -type f -exec sed -i '' '/DEVELOPMENT_TEAM/d' {} \;
-          # Verify nothing remains
-          if find ios -name "*.xcconfig" -type f -exec grep -l 'DEVELOPMENT_TEAM' {} \; ; then
-            echo "ERROR: DEVELOPMENT_TEAM still present in xcconfig files!"
-            exit 1
-          fi
-          echo "All xcconfig files clean."
+          python3 - <<'PYEOF'
+          import pathlib, os
 
+          removed_from = []
+          for xcconfig in pathlib.Path("ios").rglob("*.xcconfig"):
+              if not xcconfig.is_file():
+                  continue
+              original = xcconfig.read_text()
+              new_lines = [line for line in original.splitlines(keepends=True)
+                           if "DEVELOPMENT_TEAM" not in line]
+              if len(new_lines) != len(original.splitlines()):
+                  xcconfig.write_text(''.join(new_lines))
+                  removed_from.append(str(xcconfig))
+
+          print(f"Cleaned DEVELOPMENT_TEAM from {len(removed_from)} file(s):")
+          for f in removed_from:
+              print(f"  {f}")
+
+          # Verify nothing remains
+          remaining = []
+          for xcconfig in pathlib.Path("ios").rglob("*.xcconfig"):
+              if xcconfig.is_file() and "DEVELOPMENT_TEAM" in xcconfig.read_text():
+                  remaining.append(str(xcconfig))
+
+          if remaining:
+              print("ERROR: DEVELOPMENT_TEAM still present in these files:")
+              for f in remaining:
+                  print(f"  {f}")
+              exit(1)
+          else:
+              print("All xcconfig files clean.")
+          PYEOF
       # ------------------------------------------------------------------
       # 7. Final verification: no signing team anywhere
       # ------------------------------------------------------------------
