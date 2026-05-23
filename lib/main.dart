@@ -773,7 +773,7 @@ class _GraphTabState extends State<GraphTab> {
                     lineTouchData: LineTouchData(
                       enabled: true,
                       touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (_) => AppColors.text.withOpacity(0.9),
+                        tooltipBgColor: AppColors.text.withOpacity(0.9),
                         tooltipRoundedRadius: 8,
                         tooltipPadding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
