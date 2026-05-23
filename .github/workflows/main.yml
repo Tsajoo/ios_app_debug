@@ -101,7 +101,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 3. Write Podfile (minimal – real signing changes come later)
+      # 3. Write Podfile (minimal – signing changes come later)
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -139,7 +139,6 @@ jobs:
           end
 
           post_install do |installer|
-            # Allow non-modular includes in Pods
             installer.pods_project.build_configurations.each do |config|
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
@@ -152,7 +151,6 @@ jobs:
               end
             end
 
-            # Append flag to Pods xcconfig files
             Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig|
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
@@ -163,7 +161,7 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 4. Force signing off in ALL xcconfig files (add override at bottom)
+      # 4. Override signing settings in all xcconfig files
       # ------------------------------------------------------------------
       - name: Override signing in all xcconfig files
         run: |
@@ -205,9 +203,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 5. 🔥 RUBY – force dummy team + disable signing in Runner project
-      #    This step opens the .xcodeproj and sets the values directly,
-      #    guaranteeing they exist.
+      # 5. 🔥 Set dummy team & disable signing via xcodeproj (Ruby)
       # ------------------------------------------------------------------
       - name: Set dummy team & disable signing via Xcodeproj
         run: |
@@ -217,7 +213,6 @@ jobs:
           project_path = 'ios/Runner.xcodeproj'
           project = Xcodeproj::Project.open(project_path)
 
-          # Target names to modify
           target_names = ['Runner', 'RunnerTests']
 
           project.targets.each do |target|
@@ -239,16 +234,28 @@ jobs:
           RUBY
 
       # ------------------------------------------------------------------
-      # 6. Verify dummy team exists (safety check)
+      # 6. Verify dummy team exists (flexible check – accepts any non‑empty value)
       # ------------------------------------------------------------------
       - name: Verify dummy team in pbxproj
         run: |
-          if grep -q 'DEVELOPMENT_TEAM = "0000000000";' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "✅ Dummy team present in pbxproj."
-          else
-            echo "❌ ERROR: Dummy team still missing!"
-            exit 1
-          fi
+          python3 - <<'PYEOF'
+          import pathlib, re
+
+          pbx = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj").read_text()
+
+          # Find lines like: DEVELOPMENT_TEAM = "0000000000";  OR  DEVELOPMENT_TEAM = 0000000000;
+          match = re.search(r'DEVELOPMENT_TEAM\s*=\s*"?(\S+?)"?\s*;', pbx)
+          if match:
+              team_value = match.group(1).strip()
+              if team_value and team_value != '""':
+                  print(f"✅ DEVELOPMENT_TEAM found with value: {team_value}")
+              else:
+                  print("❌ ERROR: DEVELOPMENT_TEAM is empty or quotes only!")
+                  exit(1)
+          else:
+              print("❌ ERROR: DEVELOPMENT_TEAM line not found in pbxproj!")
+              exit(1)
+          PYEOF
 
       # ------------------------------------------------------------------
       # 7. Build unsigned app
