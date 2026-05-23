@@ -65,7 +65,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 2. Place GoogleService-Info.plist
+      # 2. Place GoogleService-Info.plist (dummy if secret not set)
       # ------------------------------------------------------------------
       - name: Place GoogleService-Info.plist
         env:
@@ -138,7 +138,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 4. Write Podfile (post_install also sets dummy team on Runner target)
+      # 4. Write Podfile (post_install sets dummy team on Runner target)
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -195,7 +195,7 @@ jobs:
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
 
-            # Set dummy team on the Runner project itself
+            # Set dummy team on Runner project itself
             runner_project_path = File.join(installer.sandbox.root, '..', 'Runner.xcodeproj')
             if File.exist?(runner_project_path)
               require 'xcodeproj'
@@ -219,7 +219,7 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 5. Force disable signing & set dummy team in all xcconfig files
+      # 5. Override signing settings in all xcconfig files
       # ------------------------------------------------------------------
       - name: Override signing settings in all xcconfig files
         run: |
@@ -240,7 +240,6 @@ jobs:
               if not xcconfig.is_file():
                   continue
               content = xcconfig.read_text()
-              # Remove any existing lines with these keys
               lines = content.splitlines(keepends=True)
               clean_lines = []
               for line in lines:
@@ -262,21 +261,35 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 6. **GUARANTEE dummy team in pbxproj** (replaces all existing lines + adds if missing)
+      # 6. GUARANTEE dummy team in pbxproj (Python – bulletproof)
       # ------------------------------------------------------------------
       - name: Force DEVELOPMENT_TEAM = 0000000000 in pbxproj
         run: |
-          echo "Forcing dummy DEVELOPMENT_TEAM in pbxproj..."
-          # Replace any existing DEVELOPMENT_TEAM line with the dummy value
-          sed -i '' 's/DEVELOPMENT_TEAM[^;]*;/DEVELOPMENT_TEAM = "0000000000";/g' ios/Runner.xcodeproj/project.pbxproj
+          python3 - <<'PYEOF'
+          import pathlib
 
-          # Now verify it is present
-          if grep -q 'DEVELOPMENT_TEAM = "0000000000";' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "Dummy DEVELOPMENT_TEAM successfully forced."
-          else
-            echo "ERROR: Could not force dummy DEVELOPMENT_TEAM!"
-            exit 1
-          fi
+          pbx_path = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
+          content = pbx_path.read_text()
+          new_lines = []
+          for line in content.splitlines(keepends=True):
+              if 'DEVELOPMENT_TEAM' in line and '=' in line:
+                  # Keep original indentation
+                  leading = line[:len(line) - len(line.lstrip())]
+                  new_lines.append(f'{leading}DEVELOPMENT_TEAM = "0000000000";\n')
+              else:
+                  new_lines.append(line)
+
+          pbx_path.write_text(''.join(new_lines))
+          print("DEVELOPMENT_TEAM lines replaced (Python).")
+
+          # Verify
+          verify_content = pbx_path.read_text()
+          if 'DEVELOPMENT_TEAM = "0000000000";' in verify_content:
+              print("Verification successful: dummy team present.")
+          else:
+              print("ERROR: dummy team not found after replacement!")
+              exit(1)
+          PYEOF
 
       # ------------------------------------------------------------------
       # 7. Final verification (signing still disabled)
