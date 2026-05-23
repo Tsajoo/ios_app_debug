@@ -28,7 +28,7 @@ jobs:
           flutter create --org com.example --project-name biogas --platforms=android,ios .
 
       # ------------------------------------------------------------------
-      # 1. Patch project.pbxproj – brute‑force disable signing, BUT with dummy team
+      # 1. Patch project.pbxproj – disable signing, set dummy team
       # ------------------------------------------------------------------
       - name: Patch project.pbxproj (disable signing, dummy team)
         run: |
@@ -38,12 +38,11 @@ jobs:
           pbx = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
           lines = pbx.read_text().splitlines(keepends=True)
 
-          # Keys and their forced values
           targets = {
-              'DEVELOPMENT_TEAM':             '"0000000000"',   # dummy team to satisfy Flutter
+              'DEVELOPMENT_TEAM':             '"0000000000"',
               'CODE_SIGN_STYLE':              'Manual',
               'CODE_SIGN_IDENTITY':           '""',
-              'PROVISIONING_PROFILE_SPECIFIER': '"dummy"',      # dummy profile
+              'PROVISIONING_PROFILE_SPECIFIER': '"dummy"',
               'CODE_SIGNING_REQUIRED':        'NO',
               'CODE_SIGNING_ALLOWED':         'NO',
           }
@@ -62,28 +61,11 @@ jobs:
                   new_lines.append(line)
 
           pbx.write_text(''.join(new_lines))
-          print("project.pbxproj patched (dummy team, signing disabled)")
+          print("project.pbxproj patched (brute-force)")
           PYEOF
 
       # ------------------------------------------------------------------
-      # 2. Verify pbxproj
-      # ------------------------------------------------------------------
-      - name: Verify pbxproj settings
-        run: |
-          # Dummy team must exist
-          if ! grep -q 'DEVELOPMENT_TEAM = "0000000000";' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "ERROR: DEVELOPMENT_TEAM not set to dummy value!"
-            exit 1
-          fi
-          # Signing still disabled
-          if grep -qE 'CODE_SIGNING_ALLOWED\s*=\s*YES;' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "ERROR: CODE_SIGNING_ALLOWED still YES!"
-            exit 1
-          fi
-          echo "pbxproj correctly configured."
-
-      # ------------------------------------------------------------------
-      # 3. Place GoogleService-Info.plist (dummy if secret not set)
+      # 2. Place GoogleService-Info.plist
       # ------------------------------------------------------------------
       - name: Place GoogleService-Info.plist
         env:
@@ -135,7 +117,7 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 4. Patch Info.plist (ATS + background modes)
+      # 3. Patch Info.plist
       # ------------------------------------------------------------------
       - name: Patch Info.plist
         run: |
@@ -156,7 +138,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 5. Write Podfile (with post_install that also sets dummy team on Runner)
+      # 4. Write Podfile (post_install also sets dummy team on Runner target)
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -213,18 +195,18 @@ jobs:
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
 
-            # Disable signing on Runner project, but set dummy team/profile
+            # Set dummy team on the Runner project itself
             runner_project_path = File.join(installer.sandbox.root, '..', 'Runner.xcodeproj')
             if File.exist?(runner_project_path)
               require 'xcodeproj'
               runner_project = Xcodeproj::Project.open(runner_project_path)
               runner_project.targets.each do |target|
                 target.build_configurations.each do |config|
+                  config.build_settings['DEVELOPMENT_TEAM']           = '0000000000'
+                  config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'dummy'
                   config.build_settings['CODE_SIGNING_ALLOWED']       = 'NO'
                   config.build_settings['CODE_SIGNING_REQUIRED']      = 'NO'
                   config.build_settings['CODE_SIGN_IDENTITY']         = ''
-                  config.build_settings['DEVELOPMENT_TEAM']           = '0000000000'
-                  config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = 'dummy'
                 end
               end
               runner_project.save
@@ -237,9 +219,9 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 6. Force signing disable & dummy team in ALL xcconfig files
+      # 5. Force disable signing & set dummy team in all xcconfig files
       # ------------------------------------------------------------------
-      - name: Disable signing in all xcconfig files
+      - name: Override signing settings in all xcconfig files
         run: |
           python3 - <<'PYEOF'
           import pathlib
@@ -258,6 +240,7 @@ jobs:
               if not xcconfig.is_file():
                   continue
               content = xcconfig.read_text()
+              # Remove any existing lines with these keys
               lines = content.splitlines(keepends=True)
               clean_lines = []
               for line in lines:
@@ -279,16 +262,27 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 7. Final verification
+      # 6. **GUARANTEE dummy team in pbxproj** (replaces all existing lines + adds if missing)
+      # ------------------------------------------------------------------
+      - name: Force DEVELOPMENT_TEAM = 0000000000 in pbxproj
+        run: |
+          echo "Forcing dummy DEVELOPMENT_TEAM in pbxproj..."
+          # Replace any existing DEVELOPMENT_TEAM line with the dummy value
+          sed -i '' 's/DEVELOPMENT_TEAM[^;]*;/DEVELOPMENT_TEAM = "0000000000";/g' ios/Runner.xcodeproj/project.pbxproj
+
+          # Now verify it is present
+          if grep -q 'DEVELOPMENT_TEAM = "0000000000";' ios/Runner.xcodeproj/project.pbxproj; then
+            echo "Dummy DEVELOPMENT_TEAM successfully forced."
+          else
+            echo "ERROR: Could not force dummy DEVELOPMENT_TEAM!"
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------
+      # 7. Final verification (signing still disabled)
       # ------------------------------------------------------------------
       - name: Final signing verification
         run: |
-          # Dummy team must be present
-          if ! grep -q 'DEVELOPMENT_TEAM = "0000000000";' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "ERROR: Dummy DEVELOPMENT_TEAM missing in pbxproj!"
-            exit 1
-          fi
-          # Still no actual signing
           if grep -qE 'CODE_SIGNING_ALLOWED\s*=\s*YES;' ios/Runner.xcodeproj/project.pbxproj; then
             echo "ERROR: CODE_SIGNING_ALLOWED still YES!"
             exit 1
