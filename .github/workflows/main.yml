@@ -28,9 +28,9 @@ jobs:
           flutter create --org com.example --project-name biogas --platforms=android,ios .
 
       # ------------------------------------------------------------------
-      # 1. Brute‑force removal of ALL signing settings (including conditional)
+      # 1. Patch project.pbxproj – brute‑force disable signing
       # ------------------------------------------------------------------
-      - name: Patch project.pbxproj – brute-force disable signing
+      - name: Patch project.pbxproj (disable signing)
         run: |
           python3 - <<'PYEOF'
           import pathlib
@@ -38,7 +38,6 @@ jobs:
           pbx = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
           lines = pbx.read_text().splitlines(keepends=True)
 
-          # Keys we want to annihilate, with their forced values
           targets = {
               'DEVELOPMENT_TEAM':             '""',
               'CODE_SIGN_STYLE':              'Manual',
@@ -53,7 +52,6 @@ jobs:
               stripped = line.lstrip()
               replaced = False
               for key, forced_value in targets.items():
-                  # If the line contains the key and an assignment (even conditional)
                   if key in stripped and '=' in stripped:
                       indent = line[:len(line) - len(line.lstrip())]
                       new_lines.append(f'{indent}{key} = {forced_value};\n')
@@ -67,19 +65,19 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 2. Verify – fail if any non‑empty team or enabled signing remains
+      # 2. Verify pbxproj
       # ------------------------------------------------------------------
-      - name: Verify no signing team remains
+      - name: Verify no signing team in pbxproj
         run: |
           if grep -qE 'DEVELOPMENT_TEAM\s*=\s*"[^"]+"' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "ERROR: DEVELOPMENT_TEAM still set to non-empty!"
+            echo "ERROR: Non-empty DEVELOPMENT_TEAM still present!"
             exit 1
           fi
           if grep -qE 'CODE_SIGNING_ALLOWED\s*=\s*YES;' ios/Runner.xcodeproj/project.pbxproj; then
             echo "ERROR: CODE_SIGNING_ALLOWED still YES!"
             exit 1
           fi
-          echo "pbxproj verification OK."
+          echo "pbxproj clean."
 
       # ------------------------------------------------------------------
       # 3. Place GoogleService-Info.plist (dummy if secret not set)
@@ -134,7 +132,7 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 4. Patch Info.plist (ATS + background modes)
+      # 4. Patch Info.plist
       # ------------------------------------------------------------------
       - name: Patch Info.plist
         run: |
@@ -155,7 +153,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 5. Write Podfile – also forces signing off on Runner project itself
+      # 5. Write Podfile (with post_install that disables Runner signing)
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -193,7 +191,6 @@ jobs:
           end
 
           post_install do |installer|
-            # Allow non-modular includes in Pods
             installer.pods_project.build_configurations.each do |config|
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
@@ -209,12 +206,10 @@ jobs:
               end
             end
 
-            # Append flag to Pods xcconfig files
             Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig|
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
 
-            # Force disable signing on the Runner project itself (belt and suspenders)
             runner_project_path = File.join(installer.sandbox.root, '..', 'Runner.xcodeproj')
             if File.exist?(runner_project_path)
               require 'xcodeproj'
@@ -229,7 +224,7 @@ jobs:
                 end
               end
               runner_project.save
-              puts "Runner project signing disabled via Podfile post_install."
+              puts "Runner project signing disabled."
             end
           end
           PODEOF
@@ -238,39 +233,45 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 6. Remove any remaining DEVELOPMENT_TEAM from xcconfig files
+      # 6. Force disable signing in all xcconfig files (STRIP + OVERRIDE)
       # ------------------------------------------------------------------
-      - name: Strip DEVELOPMENT_TEAM from xcconfig files
+      - name: Disable signing in all xcconfig files
         run: |
-          echo "Removing DEVELOPMENT_TEAM from all xcconfig files..."
           python3 - <<'PYEOF'
           import pathlib
 
-          cleaned = 0
+          override = """
+          CODE_SIGNING_ALLOWED = NO
+          CODE_SIGNING_REQUIRED = NO
+          CODE_SIGN_IDENTITY = 
+          DEVELOPMENT_TEAM = 
+          PROVISIONING_PROFILE_SPECIFIER = 
+          CODE_SIGN_STYLE = Manual
+          CODE_SIGN_ENTITLEMENTS = 
+          """
+
           for xcconfig in pathlib.Path("ios").rglob("*.xcconfig"):
               if not xcconfig.is_file():
                   continue
               content = xcconfig.read_text()
-              if "DEVELOPMENT_TEAM" not in content:
-                  continue
-              new_lines = [line for line in content.splitlines(keepends=True)
-                           if "DEVELOPMENT_TEAM" not in line]
-              xcconfig.write_text(''.join(new_lines))
-              cleaned += 1
-              print(f"  Cleaned: {xcconfig}")
+              lines = content.splitlines(keepends=True)
+              clean_lines = []
+              for line in lines:
+                  if not any(key in line for key in [
+                      "DEVELOPMENT_TEAM",
+                      "CODE_SIGNING_REQUIRED",
+                      "CODE_SIGNING_ALLOWED",
+                      "CODE_SIGN_IDENTITY",
+                      "PROVISIONING_PROFILE_SPECIFIER",
+                      "CODE_SIGN_STYLE",
+                      "CODE_SIGN_ENTITLEMENTS"
+                  ]):
+                      clean_lines.append(line)
+              new_content = ''.join(clean_lines) + override
+              xcconfig.write_text(new_content)
+              print(f"Processed: {xcconfig}")
 
-          print(f"Cleaned DEVELOPMENT_TEAM from {cleaned} file(s).")
-
-          # Final check
-          remaining = [str(f) for f in pathlib.Path("ios").rglob("*.xcconfig")
-                       if f.is_file() and "DEVELOPMENT_TEAM" in f.read_text()]
-          if remaining:
-              print("ERROR: DEVELOPMENT_TEAM still present in:")
-              for f in remaining:
-                  print(f"  {f}")
-              exit(1)
-          else:
-              print("All xcconfig files clean.")
+          print("All xcconfig files now end with signing-disabled overrides.")
           PYEOF
 
       # ------------------------------------------------------------------
@@ -279,14 +280,19 @@ jobs:
       - name: Final signing verification
         run: |
           if grep -qE 'DEVELOPMENT_TEAM\s*=\s*"[^"]+"' ios/Runner.xcodeproj/project.pbxproj; then
-            echo "ERROR: Non-empty DEVELOPMENT_TEAM still in project.pbxproj!"
+            echo "ERROR: Non-empty DEVELOPMENT_TEAM in pbxproj!"
             exit 1
           fi
           if grep -qE 'CODE_SIGNING_ALLOWED\s*=\s*YES;' ios/Runner.xcodeproj/project.pbxproj; then
             echo "ERROR: CODE_SIGNING_ALLOWED still YES!"
             exit 1
           fi
-          echo "Signing successfully disabled everywhere."
+          # Also check that no xcconfig has DEVELOPMENT_TEAM set to non-empty
+          if grep -rE 'DEVELOPMENT_TEAM\s*=\s*[^ ]' ios/Flutter/ ios/Pods/Target\ Support\ Files/ 2>/dev/null; then
+            echo "ERROR: DEVELOPMENT_TEAM still set in xcconfig files!"
+            exit 1
+          fi
+          echo "All signing successfully disabled."
 
       # ------------------------------------------------------------------
       # 8. Build unsigned app
