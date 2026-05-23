@@ -54,15 +54,15 @@ void main() async {
 
 // ── Pastel colour palette ────────────────────────────────────────────────────
 class AppColors {
-  static const bg         = Color(0xFFF7F4F0);       // warm off-white
+  static const bg         = Color(0xFFF7F4F0);
   static const card       = Color(0xFFFFFFFF);
-  static const green      = Color(0xFF7EC8A4);        // sage green
+  static const green      = Color(0xFF7EC8A4);
   static const greenLight = Color(0xFFD6F0E4);
-  static const red        = Color(0xFFE8857A);        // soft coral
+  static const red        = Color(0xFFE8857A);
   static const redLight   = Color(0xFFFCE0DE);
-  static const blue       = Color(0xFF85B4D4);        // sky blue
+  static const blue       = Color(0xFF85B4D4);
   static const blueLight  = Color(0xFFD6EAF7);
-  static const peach      = Color(0xFFF5C49A);        // peach accent
+  static const peach      = Color(0xFFF5C49A);
   static const peachLight = Color(0xFFFFF0E0);
   static const text       = Color(0xFF3A3A3A);
   static const textLight  = Color(0xFF8A8A8A);
@@ -495,9 +495,33 @@ class RealtimeTab extends StatelessWidget {
   }
 }
 
-// ── 2. History Tab ───────────────────────────────────────────────────────────
+// ── 2. History Tab (with swipe to delete) ────────────────────────────────────
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
+
+  // Helper to delete a history entry with confirmation
+  void _confirmDelete(BuildContext context, String key) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete entry?'),
+        content: const Text('This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              FirebaseDatabase.instance.ref('history').child(key).remove();
+              Navigator.pop(ctx);
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -550,52 +574,81 @@ class HistoryTab extends StatelessWidget {
               dotColor = AppColors.blue;
             }
 
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ],
+            // Wrap card in Dismissible for swipe-to-delete
+            return Dismissible(
+              key: Key(key),
+              direction: DismissDirection.horizontal,
+              background: Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.delete_outline,
+                    color: Colors.white, size: 24),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
+              secondaryBackground: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.delete_outline,
+                    color: Colors.white, size: 24),
+              ),
+              confirmDismiss: (_) {
+                _confirmDelete(context, key);
+                return Future.value(false); // we handle deletion manually via dialog
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Triggered by: $sensor',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.text,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Triggered by: $sensor',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.text,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Temp: ${item['suhu'] ?? '-'}°C  ·  PPM: ${item['ppm'] ?? '-'}  ·  pH: ${item['ph'] ?? '-'}',
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textLight),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'Temp: ${item['suhu'] ?? '-'}°C  ·  PPM: ${item['ppm'] ?? '-'}  ·  pH: ${item['ph'] ?? '-'}',
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.textLight),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -605,7 +658,7 @@ class HistoryTab extends StatelessWidget {
   }
 }
 
-// ── 3. Graph Tab ─────────────────────────────────────────────────────────────
+// ── 3. Graph Tab (with interactive touch tooltips) ───────────────────────────
 class GraphTab extends StatefulWidget {
   const GraphTab({super.key});
   @override
@@ -716,6 +769,32 @@ class _GraphTabState extends State<GraphTab> {
 
                 return LineChart(
                   LineChartData(
+                    // ★ Touch interaction
+                    lineTouchData: LineTouchData(
+                      enabled: true,
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (_) => AppColors.text.withOpacity(0.9),
+                        tooltipRoundedRadius: 8,
+                        tooltipPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            final metricLabel = selected.label;
+                            return LineTooltipItem(
+                              '${spot.y.toStringAsFixed(1)} $metricLabel',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                      touchCallback: (event, response) {
+                        // Optional: you could add haptic feedback here
+                      },
+                    ),
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
