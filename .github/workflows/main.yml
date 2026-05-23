@@ -28,26 +28,49 @@ jobs:
           flutter create --org com.example --project-name biogas --platforms=android,ios .
 
       # ------------------------------------------------------------------
-      # 1. Create Xcode config files that disable ALL code signing.
+      # 1. Patch project.pbxproj – line‑by‑line replacement (bulletproof)
       # ------------------------------------------------------------------
-      - name: Create signing‑disabling xcconfig files
+      - name: Patch project.pbxproj (disable signing)
         run: |
-          mkdir -p ios/Flutter
+          python3 - <<'PYEOF'
+          import re, pathlib
 
-          cat > ios/Flutter/Release.xcconfig << 'EOF'
-          #include "Generated.xcconfig"
-          CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO
-          CODE_SIGN_IDENTITY=
-          PROVISIONING_PROFILE_SPECIFIER=
-          DEVELOPMENT_TEAM=
-          EOF
+          pbx = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
+          lines = pbx.read_text().splitlines(keepends=True)
 
-          cp ios/Flutter/Release.xcconfig ios/Flutter/Debug.xcconfig
-          cp ios/Flutter/Release.xcconfig ios/Flutter/Profile.xcconfig
+          patched = []
+          for line in lines:
+              l = line
+              # Override each key if present
+              l = re.sub(r'DEVELOPMENT_TEAM\s*=\s*[^;]+;', 'DEVELOPMENT_TEAM = "";', l)
+              l = re.sub(r'CODE_SIGN_STYLE\s*=\s*[^;]+;',  'CODE_SIGN_STYLE = Manual;', l)
+              l = re.sub(r'CODE_SIGN_IDENTITY\s*=\s*[^;]+;', 'CODE_SIGN_IDENTITY = "";', l)
+              l = re.sub(r'PROVISIONING_PROFILE_SPECIFIER\s*=\s*[^;]+;', 'PROVISIONING_PROFILE_SPECIFIER = "";', l)
+              l = re.sub(r'CODE_SIGNING_REQUIRED\s*=\s*[^;]+;', 'CODE_SIGNING_REQUIRED = NO;', l)
+              l = re.sub(r'CODE_SIGNING_ALLOWED\s*=\s*[^;]+;', 'CODE_SIGNING_ALLOWED = NO;', l)
+              patched.append(l)
+
+          pbx.write_text(''.join(patched))
+          print("project.pbxproj patched OK")
+          PYEOF
 
       # ------------------------------------------------------------------
-      # 2. Place your GoogleService-Info.plist.
+      # 2. Verify the patch – fails the job if any signing requirement remains
+      # ------------------------------------------------------------------
+      - name: Verify no signing team remains
+        run: |
+          if grep -qE 'DEVELOPMENT_TEAM\s*=\s*[^"];' ios/Runner.xcodeproj/project.pbxproj; then
+            echo "ERROR: DEVELOPMENT_TEAM still set to non-empty value!"
+            exit 1
+          fi
+          if grep -qE 'CODE_SIGNING_ALLOWED\s*=\s*YES;' ios/Runner.xcodeproj/project.pbxproj; then
+            echo "ERROR: CODE_SIGNING_ALLOWED still YES!"
+            exit 1
+          fi
+          echo "Signing successfully disabled."
+
+      # ------------------------------------------------------------------
+      # 3. Place GoogleService-Info.plist (dummy if secret not set)
       # ------------------------------------------------------------------
       - name: Place GoogleService-Info.plist
         env:
@@ -99,7 +122,7 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 3. Patch Info.plist (ATS + background modes)
+      # 4. Patch Info.plist (ATS + background modes)
       # ------------------------------------------------------------------
       - name: Patch Info.plist
         run: |
@@ -120,7 +143,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 4. Write the Podfile WITH xcconfig patching
+      # 5. Write Podfile – fixes non‑modular header issue
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -159,12 +182,11 @@ jobs:
           end
 
           post_install do |installer|
-            # Force the flag at the Pods project level
+            # Allow non-modular headers inside Firebase modules
             installer.pods_project.build_configurations.each do |config|
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
 
-            # Force the flag on every pod target
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
               target.build_configurations.each do |config|
@@ -176,8 +198,7 @@ jobs:
               end
             end
 
-            # CRITICAL: Append the flag to EVERY xcconfig file.
-            # This overrides any settings CocoaPods may have written.
+            # Append flag to every xcconfig file (belt and suspenders)
             Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig|
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
@@ -188,13 +209,13 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 5. Build the unsigned app.
+      # 6. Build the unsigned app
       # ------------------------------------------------------------------
       - name: Build unsigned app
         run: flutter build ios --release --no-codesign
 
       # ------------------------------------------------------------------
-      # 6. Verify binary and package IPA.
+      # 7. Verify binary & package IPA
       # ------------------------------------------------------------------
       - name: Verify binary exists
         run: |
