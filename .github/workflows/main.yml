@@ -19,7 +19,7 @@ jobs:
           channel: 'stable'
           cache: false
 
-      - name: Disable Swift Package Manager (SPM not yet supported by Firebase)
+      - name: Disable Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
 
       - name: Regenerate iOS project
@@ -28,43 +28,26 @@ jobs:
           flutter create --org com.example --project-name biogas --platforms=android,ios .
 
       # ------------------------------------------------------------------
-      # 1. Patch project.pbxproj to remove ALL signing requirements
-      #    (replaces DEVELOPMENT_TEAM, CODE_SIGN_STYLE, etc.)
+      # 1. Create Xcode config files that disable ALL code signing.
       # ------------------------------------------------------------------
-      - name: Patch project.pbxproj — disable signing
+      - name: Create signing‑disabling xcconfig files
         run: |
-          python3 - <<'PYEOF'
-          import re, pathlib
-          pbx = pathlib.Path("ios/Runner.xcodeproj/project.pbxproj")
-          txt = pbx.read_text()
+          mkdir -p ios/Flutter
 
-          def patch_block(match):
-              block = match.group(0)
-              overrides = {
-                  "CODE_SIGNING_ALLOWED":           "NO",
-                  "CODE_SIGNING_REQUIRED":          "NO",
-                  "CODE_SIGN_STYLE":                "Manual",
-                  "CODE_SIGN_IDENTITY":             '""',
-                  "PROVISIONING_PROFILE_SPECIFIER": '""',
-                  "DEVELOPMENT_TEAM":               '""',
-              }
-              for key, val in overrides.items():
-                  block, n = re.subn(rf'{key} = [^;]+;', f'{key} = {val};', block)
-                  if n == 0:
-                      block = block.replace(
-                          "buildSettings = {",
-                          f"buildSettings = {{\n\t\t\t\t{key} = {val};"
-                      )
-              return block
+          cat > ios/Flutter/Release.xcconfig << 'EOF'
+          #include "Generated.xcconfig"
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=
+          PROVISIONING_PROFILE_SPECIFIER=
+          DEVELOPMENT_TEAM=
+          EOF
 
-          txt = re.sub(r'buildSettings = \{[^}]*\}', patch_block, txt, flags=re.DOTALL)
-          txt = re.sub(r'ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;', txt)
-          pbx.write_text(txt)
-          print("pbxproj patched OK")
-          PYEOF
+          cp ios/Flutter/Release.xcconfig ios/Flutter/Debug.xcconfig
+          cp ios/Flutter/Release.xcconfig ios/Flutter/Profile.xcconfig
 
       # ------------------------------------------------------------------
-      # 2. Place GoogleService-Info.plist (dummy if secret not set)
+      # 2. Place your GoogleService-Info.plist.
       # ------------------------------------------------------------------
       - name: Place GoogleService-Info.plist
         env:
@@ -116,7 +99,7 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 3. Patch Info.plist for ATS + background modes
+      # 3. Patch Info.plist (ATS + background modes)
       # ------------------------------------------------------------------
       - name: Patch Info.plist
         run: |
@@ -137,7 +120,7 @@ jobs:
           PYEOF
 
       # ------------------------------------------------------------------
-      # 4. Write Podfile — fixes non-modular header AND disables signing
+      # 4. Write the Podfile WITH xcconfig patching
       # ------------------------------------------------------------------
       - name: Write Podfile
         run: |
@@ -168,9 +151,6 @@ jobs:
 
           target 'Runner' do
             use_frameworks!
-            # NOTE: use_modular_headers! intentionally omitted to avoid
-            # turning Firebase pods into strict framework modules.
-
             flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
             target 'RunnerTests' do
@@ -179,25 +159,25 @@ jobs:
           end
 
           post_install do |installer|
-            # Allow non-modular headers inside Firebase modules
+            # Force the flag at the Pods project level
             installer.pods_project.build_configurations.each do |config|
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
 
+            # Force the flag on every pod target
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-                # Disable code signing for pods (already done in project, belt & suspenders)
                 config.build_settings['CODE_SIGNING_ALLOWED']       = 'NO'
                 config.build_settings['CODE_SIGNING_REQUIRED']      = 'NO'
                 config.build_settings['CODE_SIGN_IDENTITY']         = ''
-                # Fix Firebase non-modular header issue
                 config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
               end
             end
 
-            # Append flag to every xcconfig file for good measure
+            # CRITICAL: Append the flag to EVERY xcconfig file.
+            # This overrides any settings CocoaPods may have written.
             Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig|
               File.open(xcconfig, 'a') { |f| f.puts "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" }
             end
@@ -208,13 +188,13 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------
-      # 5. Build the unsigned app
+      # 5. Build the unsigned app.
       # ------------------------------------------------------------------
       - name: Build unsigned app
         run: flutter build ios --release --no-codesign
 
       # ------------------------------------------------------------------
-      # 6. Verify binary & package IPA
+      # 6. Verify binary and package IPA.
       # ------------------------------------------------------------------
       - name: Verify binary exists
         run: |
