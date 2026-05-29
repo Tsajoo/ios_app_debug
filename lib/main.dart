@@ -102,7 +102,7 @@ class BiogasApp extends StatelessWidget {
           elevation: 0,
           type: BottomNavigationBarType.fixed,
         ),
-        dialogTheme: const DialogTheme(
+        dialogTheme: const DialogThemeData(
           backgroundColor: AppColors.card,
         ),
       ),
@@ -122,7 +122,7 @@ class BiogasApp extends StatelessWidget {
           elevation: 0,
           type: BottomNavigationBarType.fixed,
         ),
-        dialogTheme: const DialogTheme(
+        dialogTheme: const DialogThemeData(
           backgroundColor: AppColors.darkCard,
         ),
       ),
