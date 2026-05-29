@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -53,109 +52,30 @@ void main() async {
   runApp(const BiogasApp());
 }
 
-// ── Theme extension with pastel colors ───────────────────────────────────────
-@immutable
-class AppColors extends ThemeExtension<AppColors> {
-  final Color bg;
-  final Color card;
-  final Color green;
-  final Color greenLight;
-  final Color red;
-  final Color redLight;
-  final Color blue;
-  final Color blueLight;
-  final Color peach;
-  final Color peachLight;
-  final Color text;
-  final Color textLight;
-  final Color divider;
+// ── Pastel colour palette (light) ────────────────────────────────────────────
+class AppColors {
+  static const bg         = Color(0xFFF7F4F0);
+  static const card       = Color(0xFFFFFFFF);
+  static const green      = Color(0xFF5BBF8E);
+  static const greenLight = Color(0xFFCCEEDD);
+  static const red        = Color(0xFFE8645A);
+  static const redLight   = Color(0xFFFCDEDC);
+  static const blue       = Color(0xFF5A9FD4);
+  static const blueLight  = Color(0xFFCCE4F7);
+  static const peach      = Color(0xFFEA8C55);
+  static const peachLight = Color(0xFFFFE4CC);
+  static const purple     = Color(0xFF9B7FD4);
+  static const purpleLight= Color(0xFFE8DEFF);
+  static const text       = Color(0xFF2B2B2B);
+  static const textLight  = Color(0xFF8A8A8A);
+  static const divider    = Color(0xFFEAE6E1);
 
-  const AppColors({
-    required this.bg,
-    required this.card,
-    required this.green,
-    required this.greenLight,
-    required this.red,
-    required this.redLight,
-    required this.blue,
-    required this.blueLight,
-    required this.peach,
-    required this.peachLight,
-    required this.text,
-    required this.textLight,
-    required this.divider,
-  });
-
-  // Light pastel theme
-  static const light = AppColors(
-    bg: Color(0xFFF7F4F0),
-    card: Color(0xFFFFFFFF),
-    green: Color(0xFF7EC8A4),
-    greenLight: Color(0xFFD6F0E4),
-    red: Color(0xFFE8857A),
-    redLight: Color(0xFFFCE0DE),
-    blue: Color(0xFF85B4D4),
-    blueLight: Color(0xFFD6EAF7),
-    peach: Color(0xFFF5C49A),
-    peachLight: Color(0xFFFFF0E0),
-    text: Color(0xFF3A3A3A),
-    textLight: Color(0xFF8A8A8A),
-    divider: Color(0xFFEAE6E1),
-  );
-
-  // Dark pastel theme (professional, slightly muted)
-  static const dark = AppColors(
-    bg: Color(0xFF1E1E2C),
-    card: Color(0xFF2A2A3C),
-    green: Color(0xFF7EC8A4),
-    greenLight: Color(0xFF365545),
-    red: Color(0xFFE8857A),
-    redLight: Color(0xFF543636),
-    blue: Color(0xFF85B4D4),
-    blueLight: Color(0xFF314A5A),
-    peach: Color(0xFFF5C49A),
-    peachLight: Color(0xFF534034),
-    text: Color(0xFFEAEAEA),
-    textLight: Color(0xFFA0A0B0),
-    divider: Color(0xFF3A3A4C),
-  );
-
-  @override
-  AppColors copyWith() => AppColors(
-        bg: bg,
-        card: card,
-        green: green,
-        greenLight: greenLight,
-        red: red,
-        redLight: redLight,
-        blue: blue,
-        blueLight: blueLight,
-        peach: peach,
-        peachLight: peachLight,
-        text: text,
-        textLight: textLight,
-        divider: divider,
-      );
-
-  @override
-  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
-    if (other is! AppColors) return this;
-    return AppColors(
-      bg: Color.lerp(bg, other.bg, t)!,
-      card: Color.lerp(card, other.card, t)!,
-      green: Color.lerp(green, other.green, t)!,
-      greenLight: Color.lerp(greenLight, other.greenLight, t)!,
-      red: Color.lerp(red, other.red, t)!,
-      redLight: Color.lerp(redLight, other.redLight, t)!,
-      blue: Color.lerp(blue, other.blue, t)!,
-      blueLight: Color.lerp(blueLight, other.blueLight, t)!,
-      peach: Color.lerp(peach, other.peach, t)!,
-      peachLight: Color.lerp(peachLight, other.peachLight, t)!,
-      text: Color.lerp(text, other.text, t)!,
-      textLight: Color.lerp(textLight, other.textLight, t)!,
-      divider: Color.lerp(divider, other.divider, t)!,
-    );
-  }
+  // Dark mode equivalents
+  static const darkBg     = Color(0xFF121418);
+  static const darkCard   = Color(0xFF1E2128);
+  static const darkText   = Color(0xFFF0EEFF);
+  static const darkTextLight = Color(0xFF7A7A8A);
+  static const darkDivider   = Color(0xFF2E3040);
 }
 
 class BiogasApp extends StatelessWidget {
@@ -166,75 +86,89 @@ class BiogasApp extends StatelessWidget {
     return MaterialApp(
       title: 'Biogas Monitor',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.system,   // Dark mode support
+      // ── Light Theme ──
       theme: ThemeData(
         brightness: Brightness.light,
-        scaffoldBackgroundColor: AppColors.light.bg,
+        scaffoldBackgroundColor: AppColors.bg,
         fontFamily: 'SF Pro Display',
-        colorScheme: ColorScheme.light(
-          primary: AppColors.light.green,
-          surface: AppColors.light.card,
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.green,
+          surface: AppColors.card,
         ),
-        extensions: const [AppColors.light],
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.light.green,
-          unselectedItemColor: AppColors.light.textLight,
+          backgroundColor: AppColors.card,
+          selectedItemColor: AppColors.green,
+          unselectedItemColor: AppColors.textLight,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
         ),
+        dialogTheme: const DialogTheme(
+          backgroundColor: AppColors.card,
+        ),
       ),
+      // ── Dark Theme ──
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.dark.bg,
+        scaffoldBackgroundColor: AppColors.darkBg,
         fontFamily: 'SF Pro Display',
-        colorScheme: ColorScheme.dark(
-          primary: AppColors.dark.green,
-          surface: AppColors.dark.card,
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.green,
+          surface: AppColors.darkCard,
         ),
-        extensions: const [AppColors.dark],
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.dark.green,
-          unselectedItemColor: AppColors.dark.textLight,
+          backgroundColor: AppColors.darkCard,
+          selectedItemColor: AppColors.green,
+          unselectedItemColor: AppColors.darkTextLight,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
         ),
+        dialogTheme: const DialogTheme(
+          backgroundColor: AppColors.darkCard,
+        ),
       ),
-      home: const SplashScreen(),   // Splash screen first
+      themeMode: ThemeMode.system,
+      home: const SplashScreen(),
     );
   }
 }
 
-// ── Splash Screen ────────────────────────────────────────────────────────────
+// ── Splash Screen ─────────────────────────────────────────────────────────────
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fade;
+  late AnimationController _controller;
+  late Animation<double> _fade;
+  late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 900),
     );
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _scale = Tween<double>(begin: 0.80, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
     _controller.forward();
 
-    // After 2.5 seconds, navigate to main screen
-    Timer(const Duration(milliseconds: 2500), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
+    Future.delayed(const Duration(milliseconds: 2600), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const MainScreen(),
+            transitionDuration: const Duration(milliseconds: 500),
+            transitionsBuilder: (_, anim, __, child) =>
+                FadeTransition(opacity: anim, child: child),
+          ),
+        );
+      }
     });
   }
 
@@ -246,40 +180,73 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkBg : AppColors.bg;
+    final textColor = isDark ? AppColors.darkText : AppColors.text;
+    final subtleColor = isDark ? AppColors.darkTextLight : AppColors.textLight;
+
     return Scaffold(
-      backgroundColor: colors.bg,
+      backgroundColor: bgColor,
       body: Center(
         child: FadeTransition(
           opacity: _fade,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.energy_savings_leaf,
-                size: 72,
-                color: colors.green,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Biogas Monitor',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: colors.text,
-                  letterSpacing: -0.5,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon bubble
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5BBF8E), Color(0xFF3A9E72)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.green.withOpacity(0.4),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.biotech_outlined,
+                      color: Colors.white, size: 48),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Real-time monitoring',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colors.textLight,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 24),
+                Text(
+                  'Biogas Monitor',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Real-time sensor dashboard',
+                  style: TextStyle(
+                    color: subtleColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.green.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -287,7 +254,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ── Main screen with bottom navigation ───────────────────────────────────────
+// ── Main screen ──────────────────────────────────────────────────────────────
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
   @override
@@ -297,33 +264,28 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  late final List<Widget> _tabs;
-  late final List<String> _titles;
+  final List<Widget> _tabs = const [
+    RealtimeTab(),
+    HistoryTab(),
+    GraphTab(),
+    StatsTab(),
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabs = const [
-      RealtimeTab(),
-      HistoryTab(),
-      GraphTab(),
-      StatsTab(), // New tab
-    ];
-    _titles = const [
-      'Live Sensors',
-      'History',
-      'Graph',
-      'Stats',
-    ];
-  }
+  final List<String> _titles = ['Live Sensors', 'History', 'Graph', 'Analytics'];
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkBg : AppColors.bg;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.card;
+    final divColor = isDark ? AppColors.darkDivider : AppColors.divider;
+    final textColor = isDark ? AppColors.darkText : AppColors.text;
+    final subtleColor = isDark ? AppColors.darkTextLight : AppColors.textLight;
+
     return Scaffold(
-      backgroundColor: colors.bg,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: colors.bg,
+        backgroundColor: bgColor,
         elevation: 0,
         centerTitle: false,
         title: Column(
@@ -332,7 +294,7 @@ class _MainScreenState extends State<MainScreen> {
             Text(
               _titles[_currentIndex],
               style: TextStyle(
-                color: colors.text,
+                color: textColor,
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.5,
@@ -341,7 +303,7 @@ class _MainScreenState extends State<MainScreen> {
             Text(
               'Biogas Monitor',
               style: TextStyle(
-                color: colors.textLight,
+                color: subtleColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -352,8 +314,8 @@ class _MainScreenState extends State<MainScreen> {
       body: _tabs[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: colors.card,
-          border: Border(top: BorderSide(color: colors.divider, width: 1)),
+          color: cardColor,
+          border: Border(top: BorderSide(color: divColor, width: 1)),
         ),
         child: SafeArea(
           child: BottomNavigationBar(
@@ -361,29 +323,25 @@ class _MainScreenState extends State<MainScreen> {
             onTap: (i) => setState(() => _currentIndex = i),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            selectedItemColor: colors.green,
-            unselectedItemColor: colors.textLight,
+            selectedItemColor: AppColors.green,
+            unselectedItemColor: subtleColor,
             items: const [
               BottomNavigationBarItem(
-                icon: Icon(Icons.sensors_outlined),
-                activeIcon: Icon(Icons.sensors),
-                label: 'Live',
-              ),
+                  icon: Icon(Icons.sensors_outlined),
+                  activeIcon: Icon(Icons.sensors),
+                  label: 'Live'),
               BottomNavigationBarItem(
-                icon: Icon(Icons.history_outlined),
-                activeIcon: Icon(Icons.history),
-                label: 'History',
-              ),
+                  icon: Icon(Icons.history_outlined),
+                  activeIcon: Icon(Icons.history),
+                  label: 'History'),
               BottomNavigationBarItem(
-                icon: Icon(Icons.show_chart_outlined),
-                activeIcon: Icon(Icons.show_chart),
-                label: 'Graph',
-              ),
+                  icon: Icon(Icons.show_chart_outlined),
+                  activeIcon: Icon(Icons.show_chart),
+                  label: 'Graph'),
               BottomNavigationBarItem(
-                icon: Icon(Icons.analytics_outlined),
-                activeIcon: Icon(Icons.analytics),
-                label: 'Stats',
-              ),
+                  icon: Icon(Icons.bar_chart_outlined),
+                  activeIcon: Icon(Icons.bar_chart),
+                  label: 'Analytics'),
             ],
           ),
         ),
@@ -396,19 +354,23 @@ class _MainScreenState extends State<MainScreen> {
 double _parse(dynamic value) {
   if (value == null) return 0.0;
   if (value is int) return value.toDouble();
-  if (value is double) return value;
+  if (value is double) return value.isNaN || value.isInfinite ? 0.0 : value;
   if (value is String) {
-    final parsed = double.tryParse(value);
-    return parsed ?? 0.0;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 0.0;
+    return double.tryParse(trimmed) ?? 0.0;
   }
   return 0.0;
 }
 
-/// Format a value to 1 decimal place if numeric, else return string as is or dash.
-String _fmt(dynamic val) {
-  final num = double.tryParse(val?.toString() ?? '');
-  if (num != null) return num.toStringAsFixed(1);
-  return val?.toString() ?? '-';
+// ── Theme helper ─────────────────────────────────────────────────────────────
+extension ThemeHelpers on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get bgColor => isDark ? AppColors.darkBg : AppColors.bg;
+  Color get cardColor => isDark ? AppColors.darkCard : AppColors.card;
+  Color get textColor => isDark ? AppColors.darkText : AppColors.text;
+  Color get subtleColor => isDark ? AppColors.darkTextLight : AppColors.textLight;
+  Color get divColor => isDark ? AppColors.darkDivider : AppColors.divider;
 }
 
 // ── 1. Realtime Tab ──────────────────────────────────────────────────────────
@@ -416,12 +378,11 @@ class RealtimeTab extends StatelessWidget {
   const RealtimeTab({super.key});
 
   void _editThreshold(BuildContext context, String key, double current) {
-    final colors = Theme.of(context).extension<AppColors>()!;
     final ctrl = TextEditingController(text: current.toStringAsFixed(1));
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: colors.card,
+      backgroundColor: context.cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -441,7 +402,7 @@ class RealtimeTab extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colors.divider,
+                  color: ctx.divColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -451,10 +412,10 @@ class RealtimeTab extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: colors.text)),
+                    color: ctx.textColor)),
             const SizedBox(height: 4),
             Text(key,
-                style: TextStyle(fontSize: 13, color: colors.textLight)),
+                style: TextStyle(fontSize: 13, color: ctx.subtleColor)),
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
@@ -464,10 +425,10 @@ class RealtimeTab extends StatelessWidget {
               style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: colors.text),
+                  color: ctx.textColor),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: colors.bg,
+                fillColor: ctx.bgColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -481,7 +442,7 @@ class RealtimeTab extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.green,
+                  backgroundColor: AppColors.green,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -519,17 +480,21 @@ class RealtimeTab extends StatelessWidget {
     required Color bgColor,
     required IconData icon,
   }) {
-    final colors = Theme.of(context).extension<AppColors>()!;
     final bool danger = value > threshold;
+    final cardColor = context.cardColor;
+    final textColor = context.textColor;
+    final subtleColor = context.subtleColor;
+    final divColor = context.divColor;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colors.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(context.isDark ? 0.2 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           )
@@ -538,13 +503,12 @@ class RealtimeTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: bgColor,
+                  color: bgColor.withOpacity(context.isDark ? 0.25 : 1.0),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -555,14 +519,15 @@ class RealtimeTab extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: colors.text)),
+                        color: textColor)),
               ),
-              // Status pill
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: danger ? colors.redLight : colors.greenLight,
+                  color: danger
+                      ? AppColors.red.withOpacity(context.isDark ? 0.25 : 1.0)
+                      : AppColors.greenLight.withOpacity(context.isDark ? 0.25 : 1.0),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -570,7 +535,7 @@ class RealtimeTab extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: danger ? colors.red : colors.green,
+                    color: danger ? AppColors.red : AppColors.green,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -578,7 +543,6 @@ class RealtimeTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          // Big value
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -587,7 +551,7 @@ class RealtimeTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 42,
                   fontWeight: FontWeight.w700,
-                  color: colors.text,
+                  color: textColor,
                   letterSpacing: -1,
                   height: 1,
                 ),
@@ -598,26 +562,24 @@ class RealtimeTab extends StatelessWidget {
                 child: Text(unit,
                     style: TextStyle(
                         fontSize: 16,
-                        color: colors.textLight,
+                        color: subtleColor,
                         fontWeight: FontWeight.w500)),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Container(height: 1, color: colors.divider),
+          Container(height: 1, color: divColor),
           const SizedBox(height: 12),
-          // Threshold row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Icon(Icons.tune_outlined,
-                      size: 14, color: colors.textLight),
+                  Icon(Icons.tune_outlined, size: 14, color: subtleColor),
                   const SizedBox(width: 4),
                   Text(
                     'Threshold: ${threshold.toStringAsFixed(1)} $unit',
-                    style: TextStyle(fontSize: 13, color: colors.textLight),
+                    style: TextStyle(fontSize: 13, color: subtleColor),
                   ),
                 ],
               ),
@@ -627,18 +589,17 @@ class RealtimeTab extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: colors.bg,
+                    color: context.bgColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.edit_outlined,
-                          size: 13, color: colors.textLight),
+                      Icon(Icons.edit_outlined, size: 13, color: subtleColor),
                       const SizedBox(width: 4),
                       Text('Edit',
                           style: TextStyle(
                               fontSize: 12,
-                              color: colors.textLight,
+                              color: subtleColor,
                               fontWeight: FontWeight.w500)),
                     ],
                   ),
@@ -659,11 +620,10 @@ class RealtimeTab extends StatelessWidget {
         return StreamBuilder<DatabaseEvent>(
           stream: FirebaseDatabase.instance.ref('realtime').onValue,
           builder: (context, realtimeSnap) {
-            final colors = Theme.of(context).extension<AppColors>()!;
             if (!configSnap.hasData || !realtimeSnap.hasData) {
-              return Center(
+              return const Center(
                 child: CircularProgressIndicator(
-                    color: colors.green, strokeWidth: 2),
+                    color: AppColors.green, strokeWidth: 2),
               );
             }
 
@@ -684,8 +644,8 @@ class RealtimeTab extends StatelessWidget {
                   value: _parse(rt['suhu']),
                   threshold: _parse(cfg['suhuThreshold']),
                   configKey: 'suhuThreshold',
-                  color: colors.peach,
-                  bgColor: colors.peachLight,
+                  color: AppColors.peach,
+                  bgColor: AppColors.peachLight,
                   icon: Icons.thermostat_outlined,
                 ),
                 _sensorCard(
@@ -695,8 +655,8 @@ class RealtimeTab extends StatelessWidget {
                   value: _parse(rt['ppm']),
                   threshold: _parse(cfg['ppmThreshold']),
                   configKey: 'ppmThreshold',
-                  color: colors.blue,
-                  bgColor: colors.blueLight,
+                  color: AppColors.blue,
+                  bgColor: AppColors.blueLight,
                   icon: Icons.air_outlined,
                 ),
                 _sensorCard(
@@ -706,8 +666,8 @@ class RealtimeTab extends StatelessWidget {
                   value: _parse(rt['ph']),
                   threshold: _parse(cfg['phThreshold']),
                   configKey: 'phThreshold',
-                  color: colors.green,
-                  bgColor: colors.greenLight,
+                  color: AppColors.green,
+                  bgColor: AppColors.greenLight,
                   icon: Icons.science_outlined,
                 ),
               ],
@@ -724,24 +684,26 @@ class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
 
   void _confirmDelete(BuildContext context, String key) {
-    final colors = Theme.of(context).extension<AppColors>()!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete entry?'),
-        content: const Text('This action cannot be undone.'),
+        backgroundColor: context.cardColor,
+        title: Text('Delete entry?',
+            style: TextStyle(color: context.textColor)),
+        content: Text('This action cannot be undone.',
+            style: TextStyle(color: context.subtleColor)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: context.subtleColor)),
           ),
           TextButton(
             onPressed: () {
               FirebaseDatabase.instance.ref('history').child(key).remove();
               Navigator.pop(ctx);
             },
-            child: Text('Delete',
-                style: TextStyle(color: colors.red)),
+            child: const Text('Delete',
+                style: TextStyle(color: AppColors.red)),
           ),
         ],
       ),
@@ -750,15 +712,14 @@ class HistoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
     return StreamBuilder<DatabaseEvent>(
       stream:
           FirebaseDatabase.instance.ref('history').limitToLast(100).onValue,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
+          return const Center(
               child: CircularProgressIndicator(
-                  color: colors.green, strokeWidth: 2));
+                  color: AppColors.green, strokeWidth: 2));
         }
 
         final map =
@@ -769,11 +730,11 @@ class HistoryTab extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.history_outlined,
-                    size: 48, color: colors.textLight),
+                    size: 48, color: context.subtleColor),
                 const SizedBox(height: 12),
                 Text('No history yet',
                     style: TextStyle(
-                        color: colors.textLight, fontSize: 15)),
+                        color: context.subtleColor, fontSize: 15)),
               ],
             ),
           );
@@ -788,31 +749,32 @@ class HistoryTab extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final key = reversed[index];
-            final item = map[key] as Map<dynamic, dynamic>;
+            final rawItem = map[key];
+            if (rawItem is! Map) return const SizedBox.shrink();
+            final item = rawItem as Map<dynamic, dynamic>;
             final sensor = item['sensorType'] ?? 'Unknown';
 
-            Color dotColor = colors.green;
-            final sensorStr = sensor.toString().toLowerCase();
-            if (sensorStr.contains('suhu')) {
-              dotColor = colors.peach;
-            } else if (sensorStr.contains('ppm') ||
-                sensorStr.contains('mq')) {
-              dotColor = colors.blue;
+            Color dotColor = AppColors.green;
+            if (sensor.toString().toLowerCase().contains('suhu')) {
+              dotColor = AppColors.peach;
+            } else if (sensor.toString().toLowerCase().contains('ppm') ||
+                sensor.toString().toLowerCase().contains('mq')) {
+              dotColor = AppColors.blue;
             }
 
-            // Format values to 1 decimal place
-            final suhu = _fmt(item['suhu']);
-            final ppm = _fmt(item['ppm']);
-            final ph = _fmt(item['ph']);
+            // Format values to 1 decimal place safely
+            final suhuVal = _parse(item['suhu']);
+            final ppmVal  = _parse(item['ppm']);
+            final phVal   = _parse(item['ph']);
 
             return Dismissible(
-              key: Key(key),
+              key: Key(key.toString()),
               direction: DismissDirection.horizontal,
               background: Container(
                 alignment: Alignment.centerLeft,
                 padding: const EdgeInsets.only(left: 20),
                 decoration: BoxDecoration(
-                  color: colors.red,
+                  color: AppColors.red,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(Icons.delete_outline,
@@ -822,24 +784,25 @@ class HistoryTab extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.only(right: 20),
                 decoration: BoxDecoration(
-                  color: colors.red,
+                  color: AppColors.red,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(Icons.delete_outline,
                     color: Colors.white, size: 24),
               ),
               confirmDismiss: (_) {
-                _confirmDelete(context, key);
+                _confirmDelete(context, key.toString());
                 return Future.value(false);
               },
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colors.card,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black
+                          .withOpacity(context.isDark ? 0.2 : 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
@@ -865,14 +828,17 @@ class HistoryTab extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: colors.text,
+                              color: context.textColor,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Temp: ${suhu}°C  ·  PPM: ${ppm}  ·  pH: $ph',
+                            // ★ 1 decimal place
+                            'Temp: ${suhuVal.toStringAsFixed(1)}°C  ·  '
+                            'PPM: ${ppmVal.toStringAsFixed(1)}  ·  '
+                            'pH: ${phVal.toStringAsFixed(1)}',
                             style: TextStyle(
-                                fontSize: 12, color: colors.textLight),
+                                fontSize: 12, color: context.subtleColor),
                           ),
                         ],
                       ),
@@ -888,7 +854,7 @@ class HistoryTab extends StatelessWidget {
   }
 }
 
-// ── 3. Graph Tab (with straight lines, better area fill) ─────────────────────
+// ── 3. Graph Tab ─────────────────────────────────────────────────────────────
 class GraphTab extends StatefulWidget {
   const GraphTab({super.key});
   @override
@@ -898,50 +864,25 @@ class GraphTab extends StatefulWidget {
 class _GraphTabState extends State<GraphTab> {
   String _metric = 'suhu';
 
-  static final _metrics = [
-    _MetricOption(
-        'suhu', 'Temp °C', AppColors.light.peach, AppColors.light.peachLight),
-    _MetricOption(
-        'ppm', 'Gas PPM', AppColors.light.blue, AppColors.light.blueLight),
-    _MetricOption(
-        'ph', 'pH', AppColors.light.green, AppColors.light.greenLight),
+  static const _metrics = [
+    _MetricOption('suhu', 'Temp °C', AppColors.peach,  AppColors.peachLight),
+    _MetricOption('ppm',  'Gas PPM', AppColors.blue,   AppColors.blueLight),
+    _MetricOption('ph',   'pH',      AppColors.green,  AppColors.greenLight),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final selected = _metrics.firstWhere(
-      (m) => m.key == _metric,
-      orElse: () => _metrics[0],
-    );
-
-    // Map colors to theme-aware versions
-    final lineColor = () {
-      switch (_metric) {
-        case 'suhu':
-          return colors.peach;
-        case 'ppm':
-          return colors.blue;
-        case 'ph':
-        default:
-          return colors.green;
-      }
-    }();
+    final selected = _metrics.firstWhere((m) => m.key == _metric);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Metric selector
+        // Metric selector chips
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Row(
             children: _metrics.map((m) {
               final active = m.key == _metric;
-              final Color activeColor = m.key == 'suhu'
-                  ? colors.peach
-                  : m.key == 'ppm'
-                      ? colors.blue
-                      : colors.green;
               return GestureDetector(
                 onTap: () => setState(() => _metric = m.key),
                 child: AnimatedContainer(
@@ -950,12 +891,14 @@ class _GraphTabState extends State<GraphTab> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: active ? activeColor : colors.card,
+                    color: active
+                        ? m.color
+                        : context.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: active
                         ? [
                             BoxShadow(
-                              color: activeColor.withOpacity(0.3),
+                              color: m.color.withOpacity(0.35),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             )
@@ -967,7 +910,7 @@ class _GraphTabState extends State<GraphTab> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: active ? Colors.white : colors.textLight,
+                      color: active ? Colors.white : context.subtleColor,
                     ),
                   ),
                 ),
@@ -976,17 +919,18 @@ class _GraphTabState extends State<GraphTab> {
           ),
         ),
         const SizedBox(height: 12),
-        // Chart
+        // Chart container
         Expanded(
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             padding: const EdgeInsets.fromLTRB(12, 20, 20, 16),
             decoration: BoxDecoration(
-              color: colors.card,
+              color: context.cardColor,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black
+                      .withOpacity(context.isDark ? 0.2 : 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 )
@@ -999,9 +943,9 @@ class _GraphTabState extends State<GraphTab> {
                   .onValue,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+                  return const Center(
                       child: CircularProgressIndicator(
-                          color: colors.green, strokeWidth: 2));
+                          color: AppColors.green, strokeWidth: 2));
                 }
 
                 final map = snapshot.data?.snapshot.value
@@ -1010,24 +954,38 @@ class _GraphTabState extends State<GraphTab> {
                   return Center(
                     child: Text('No data yet',
                         style: TextStyle(
-                            color: colors.textLight, fontSize: 14)),
+                            color: context.subtleColor, fontSize: 14)),
                   );
                 }
 
                 final sortedKeys = map.keys.toList()..sort();
                 final spots = <FlSpot>[];
                 for (var i = 0; i < sortedKeys.length; i++) {
-                  final item =
-                      map[sortedKeys[i]] as Map<dynamic, dynamic>;
-                  spots.add(FlSpot(i.toDouble(), _parse(item[_metric])));
+                  final raw = map[sortedKeys[i]];
+                  if (raw is! Map) continue;
+                  final item = raw as Map<dynamic, dynamic>;
+                  final y = _parse(item[_metric]);
+                  spots.add(FlSpot(i.toDouble(), y));
                 }
+
+                if (spots.isEmpty) {
+                  return Center(
+                    child: Text('No valid data',
+                        style: TextStyle(
+                            color: context.subtleColor, fontSize: 14)),
+                  );
+                }
+
+                final gridLineColor = context.divColor;
+                final labelColor = context.subtleColor;
 
                 return LineChart(
                   LineChartData(
                     lineTouchData: LineTouchData(
                       enabled: true,
                       touchTooltipData: LineTouchTooltipData(
-                        tooltipBgColor: colors.text.withOpacity(0.9),
+                        tooltipBgColor:
+                            context.textColor.withOpacity(0.9),
                         tooltipRoundedRadius: 8,
                         tooltipPadding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
@@ -1049,7 +1007,7 @@ class _GraphTabState extends State<GraphTab> {
                       show: true,
                       drawVerticalLine: false,
                       getDrawingHorizontalLine: (_) => FlLine(
-                        color: colors.divider,
+                        color: gridLineColor,
                         strokeWidth: 1,
                       ),
                     ),
@@ -1067,7 +1025,7 @@ class _GraphTabState extends State<GraphTab> {
                           getTitlesWidget: (value, meta) => Text(
                             value.toInt().toString(),
                             style: TextStyle(
-                                fontSize: 10, color: colors.textLight),
+                                fontSize: 10, color: labelColor),
                             textAlign: TextAlign.right,
                           ),
                         ),
@@ -1077,30 +1035,33 @@ class _GraphTabState extends State<GraphTab> {
                     lineBarsData: [
                       LineChartBarData(
                         spots: spots,
-                        isCurved: false,                  // ★ Straight lines
-                        color: lineColor,
-                        barWidth: 3,
+                        // ★ Straight lines (not curved)
+                        isCurved: false,
+                        color: selected.color,
+                        barWidth: 2.5,
                         isStrokeCapRound: true,
                         dotData: FlDotData(
                           show: true,
                           getDotPainter: (spot, _, __, ___) =>
                               FlDotCirclePainter(
                             radius: 4,
-                            color: colors.card,
+                            color: context.cardColor,
                             strokeWidth: 2,
-                            strokeColor: lineColor,
+                            strokeColor: selected.color,
                           ),
                         ),
+                        // ★ More opaque / colorful area fill
                         belowBarData: BarAreaData(
                           show: true,
-                          // ★ Better area fill: more colorful and distinct
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              lineColor.withOpacity(0.35),
-                              lineColor.withOpacity(0.0),
+                              selected.color.withOpacity(0.55),
+                              selected.color.withOpacity(0.18),
+                              selected.color.withOpacity(0.0),
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
                         ),
                       ),
@@ -1116,132 +1077,111 @@ class _GraphTabState extends State<GraphTab> {
   }
 }
 
-class _MetricOption {
-  final String key;
-  final String label;
-  final Color color;
-  final Color bgColor;
-  const _MetricOption(this.key, this.label, this.color, this.bgColor);
-}
-
-// ── 4. Stats / Analytics Tab ─────────────────────────────────────────────────
+// ── 4. Analytics / Stats Tab ──────────────────────────────────────────────────
 class StatsTab extends StatelessWidget {
   const StatsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
     return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance.ref('history').onValue,
+      stream:
+          FirebaseDatabase.instance.ref('history').limitToLast(200).onValue,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-                color: colors.green, strokeWidth: 2),
-          );
+          return const Center(
+              child: CircularProgressIndicator(
+                  color: AppColors.green, strokeWidth: 2));
         }
 
         final map =
             snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
+
         if (map == null || map.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.analytics_outlined,
-                    size: 48, color: colors.textLight),
+                Icon(Icons.bar_chart_outlined,
+                    size: 48, color: context.subtleColor),
                 const SizedBox(height: 12),
-                Text('No history data',
+                Text('No data for analytics',
                     style: TextStyle(
-                        color: colors.textLight, fontSize: 15)),
+                        color: context.subtleColor, fontSize: 15)),
               ],
             ),
           );
         }
 
-        // Extract all entries and compute stats for each sensor
-        final entries = map.values
-            .whereType<Map<dynamic, dynamic>>()
-            .toList();
+        // Aggregate stats from history
+        final suhuVals = <double>[];
+        final ppmVals  = <double>[];
+        final phVals   = <double>[];
 
-        // Helper to compute stats from a list of values
-        Map<String, double> compute(List<double> values) {
-          if (values.isEmpty) return {'min': 0, 'max': 0, 'avg': 0};
-          double min = values.first;
-          double max = values.first;
-          double sum = 0;
-          for (final v in values) {
-            if (v < min) min = v;
-            if (v > max) max = v;
-            sum += v;
-          }
-          return {
-            'min': min,
-            'max': max,
-            'avg': sum / values.length,
-          };
+        // Count danger events per sensor
+        int suhuDanger = 0, ppmDanger = 0, phDanger = 0;
+
+        for (final key in map.keys) {
+          final raw = map[key];
+          if (raw is! Map) continue;
+          final item = raw as Map<dynamic, dynamic>;
+
+          final suhu = _parse(item['suhu']);
+          final ppm  = _parse(item['ppm']);
+          final ph   = _parse(item['ph']);
+
+          if (suhu > 0) suhuVals.add(suhu);
+          if (ppm > 0)  ppmVals.add(ppm);
+          if (ph > 0)   phVals.add(ph);
+
+          final sensor = (item['sensorType'] ?? '').toString().toLowerCase();
+          if (sensor.contains('suhu')) suhuDanger++;
+          if (sensor.contains('ppm') || sensor.contains('mq')) ppmDanger++;
+          if (sensor.contains('ph')) phDanger++;
         }
 
-        // Separate data per sensor
-        final suhuValues = <double>[];
-        final ppmValues = <double>[];
-        final phValues = <double>[];
-        DateTime? latestTimestamp;
-
-        for (final entry in entries) {
-          final suhu = _parse(entry['suhu']);
-          final ppm = _parse(entry['ppm']);
-          final ph = _parse(entry['ph']);
-          suhuValues.add(suhu);
-          ppmValues.add(ppm);
-          phValues.add(ph);
-          // Use the key timestamp if available
-        }
-
-        final suhuStats = compute(suhuValues);
-        final ppmStats = compute(ppmValues);
-        final phStats = compute(phValues);
-        final totalRecords = entries.length;
-
-        // For "last 24h count" we would need timestamps; we'll approximate with total records
-        // (in a real app you'd filter by timestamp)
         return ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            _StatsCard(
-              color: colors.peach,
-              bgColor: colors.peachLight,
-              icon: Icons.thermostat_outlined,
+            // Summary row
+            _SummaryBanner(
+              totalReadings: map.length,
+              dangerCount: suhuDanger + ppmDanger + phDanger,
+              context: context,
+            ),
+            const SizedBox(height: 16),
+
+            // Sensor stat cards
+            _SensorStatCard(
+              context: context,
               title: 'Temperature',
               unit: '°C',
-              min: suhuStats['min']!,
-              max: suhuStats['max']!,
-              avg: suhuStats['avg']!,
-              count: totalRecords,
+              icon: Icons.thermostat_outlined,
+              color: AppColors.peach,
+              bgColor: AppColors.peachLight,
+              values: suhuVals,
+              dangerCount: suhuDanger,
             ),
             const SizedBox(height: 12),
-            _StatsCard(
-              color: colors.blue,
-              bgColor: colors.blueLight,
-              icon: Icons.air_outlined,
+            _SensorStatCard(
+              context: context,
               title: 'Gas (MQ Sensor)',
               unit: 'PPM',
-              min: ppmStats['min']!,
-              max: ppmStats['max']!,
-              avg: ppmStats['avg']!,
-              count: totalRecords,
+              icon: Icons.air_outlined,
+              color: AppColors.blue,
+              bgColor: AppColors.blueLight,
+              values: ppmVals,
+              dangerCount: ppmDanger,
             ),
             const SizedBox(height: 12),
-            _StatsCard(
-              color: colors.green,
-              bgColor: colors.greenLight,
-              icon: Icons.science_outlined,
+            _SensorStatCard(
+              context: context,
               title: 'pH Level',
               unit: 'pH',
-              min: phStats['min']!,
-              max: phStats['max']!,
-              avg: phStats['avg']!,
-              count: totalRecords,
+              icon: Icons.science_outlined,
+              color: AppColors.green,
+              bgColor: AppColors.greenLight,
+              values: phVals,
+              dangerCount: phDanger,
             ),
           ],
         );
@@ -1250,42 +1190,134 @@ class StatsTab extends StatelessWidget {
   }
 }
 
-class _StatsCard extends StatelessWidget {
-  final Color color;
-  final Color bgColor;
-  final IconData icon;
-  final String title;
-  final String unit;
-  final double min;
-  final double max;
-  final double avg;
-  final int count;
+class _SummaryBanner extends StatelessWidget {
+  final int totalReadings;
+  final int dangerCount;
+  final BuildContext context;
 
-  const _StatsCard({
-    required this.color,
-    required this.bgColor,
-    required this.icon,
-    required this.title,
-    required this.unit,
-    required this.min,
-    required this.max,
-    required this.avg,
-    required this.count,
+  const _SummaryBanner({
+    required this.totalReadings,
+    required this.dangerCount,
+    required this.context,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+  Widget build(BuildContext ctx) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.green.withOpacity(0.85),
+            AppColors.blue.withOpacity(0.75),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.green.withOpacity(0.25),
             blurRadius: 12,
             offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Total Readings',
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$totalReadings',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1, height: 40, color: Colors.white30),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Danger Events',
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$dangerCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SensorStatCard extends StatelessWidget {
+  final BuildContext context;
+  final String title;
+  final String unit;
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  final List<double> values;
+  final int dangerCount;
+
+  const _SensorStatCard({
+    required this.context,
+    required this.title,
+    required this.unit,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+    required this.values,
+    required this.dangerCount,
+  });
+
+  @override
+  Widget build(BuildContext ctx) {
+    double? min, max, avg;
+    if (values.isNotEmpty) {
+      min = values.reduce((a, b) => a < b ? a : b);
+      max = values.reduce((a, b) => a > b ? a : b);
+      avg = values.fold(0.0, (s, v) => s + v) / values.length;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black
+                .withOpacity(context.isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           )
         ],
       ),
@@ -1296,79 +1328,153 @@ class _StatsCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(12),
+                  color: bgColor.withOpacity(context.isDark ? 0.25 : 1.0),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 18),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: colors.text,
+                child: Text(title,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: context.textColor)),
+              ),
+              if (dangerCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.red.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$dangerCount alerts',
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.red),
                   ),
                 ),
-              ),
-              Text(
-                '$count records',
-                style: TextStyle(fontSize: 12, color: colors.textLight),
-              ),
             ],
           ),
-          const SizedBox(height: 20),
-          // Stats row
-          Row(
-            children: [
-              _StatItem(
-                  label: 'Min', value: '$min $unit', color: colors.textLight),
-              const SizedBox(width: 16),
-              _StatItem(
-                  label: 'Max', value: '$max $unit', color: colors.textLight),
-              const SizedBox(width: 16),
-              _StatItem(
-                  label: 'Average',
-                  value: '${avg.toStringAsFixed(1)} $unit',
-                  color: colors.textLight),
-            ],
-          ),
+          const SizedBox(height: 14),
+          if (values.isEmpty)
+            Text('No data available',
+                style: TextStyle(
+                    fontSize: 13, color: context.subtleColor))
+          else
+            Row(
+              children: [
+                _StatPill(
+                    label: 'Min',
+                    value: min!.toStringAsFixed(1),
+                    unit: unit,
+                    color: AppColors.blue,
+                    context: context),
+                const SizedBox(width: 8),
+                _StatPill(
+                    label: 'Avg',
+                    value: avg!.toStringAsFixed(1),
+                    unit: unit,
+                    color: color,
+                    context: context),
+                const SizedBox(width: 8),
+                _StatPill(
+                    label: 'Max',
+                    value: max!.toStringAsFixed(1),
+                    unit: unit,
+                    color: AppColors.red,
+                    context: context),
+              ],
+            ),
+          const SizedBox(height: 10),
+          // Mini bar showing spread as a visual
+          if (values.isNotEmpty && max! > min!) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (avg! - min!) / (max! - min!),
+                minHeight: 6,
+                backgroundColor: context.divColor,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${values.length} readings',
+                    style: TextStyle(
+                        fontSize: 11, color: context.subtleColor)),
+                Text('avg ${avg.toStringAsFixed(1)} $unit',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: color,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
+class _StatPill extends StatelessWidget {
   final String label;
   final String value;
+  final String unit;
   final Color color;
+  final BuildContext context;
 
-  const _StatItem({
+  const _StatPill({
     required this.label,
     required this.value,
+    required this.unit,
     required this.color,
+    required this.context,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext ctx) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: TextStyle(fontSize: 11, color: color.withOpacity(0.7))),
-          const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: color)),
-        ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(context.isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontSize: 10,
+                    color: context.subtleColor,
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: color)),
+            Text(unit,
+                style: TextStyle(
+                    fontSize: 10, color: context.subtleColor)),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _MetricOption {
+  final String key;
+  final String label;
+  final Color color;
+  final Color bgColor;
+  const _MetricOption(this.key, this.label, this.color, this.bgColor);
 }
